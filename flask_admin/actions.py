@@ -1,10 +1,18 @@
-from flask import request, redirect
+from flask import request
 
 
 from flask_admin import tools
 from flask_admin._compat import text_type
 
-
+import os
+import sys
+sys.path.append(os.path.dirname(sys.path[0]))
+try:
+    from app.utils import redirect
+except ImportError:
+    from flask import redirect
+    
+    
 def action(name, text, confirmation=None):
     """
         Use this decorator to expose actions that span more than one
