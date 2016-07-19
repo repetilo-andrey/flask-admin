@@ -1,7 +1,7 @@
 import warnings
 import re
 
-from flask import (request, redirect, flash, abort, json, Response,
+from flask import (request, flash, abort, json, Response,
                    get_flashed_messages)
 from jinja2 import contextfunction
 from wtforms.fields import HiddenField
@@ -22,6 +22,14 @@ from flask_admin._compat import iteritems, OrderedDict, as_unicode
 from .helpers import prettify_name, get_mdict_item_or_list
 from .ajax import AjaxModelLoader
 from .fields import ListEditableFieldList
+
+import os
+import sys
+sys.path.append(os.path.dirname(sys.path[0]))
+try:
+    from app.utils import redirect
+except ImportError:
+    from flask import redirect
 
 
 # Used to generate filter query string name
