@@ -1,23 +1,36 @@
 {%- if not modal -%}
-    {% extends 'admin/master.html' %}
+  {% extends 'admin/master.html' %}
 {%- endif -%}
 {% import 'admin/lib.html' as lib with context %}
+
+{% macro check_error(error) %}
+    {% if error %}
+      <span>{{ _gettext('This file cannot be edited for now.') }}</span>
+    {% else %}
+      {{ caller() }}
+    {% endif %}
+{% endmacro %}
 
 {% block body %}
     {%- if modal -%}
       {# content added to modal-content #}
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h3>{{ header_text }}</h3>
+        {% block header_text %}
+            <h3>{{ _gettext('Editing %(path)s', path=path) }}</h3>
+        {% endblock %}
       </div>
       <div class="modal-body">
-        {{ lib.render_form(form, dir_url, action=request.url, is_modal=True) }}
+        {% call check_error(error) %}
+          {{ lib.render_form(form, dir_url, action=request.url, is_modal=True) }}
+        {% endcall %}
       </div>
     {%- else -%}
-      <h3>{{ header_text }}</h3>
-      {{ lib.render_form(form, dir_url) }}
+      {{ self.header_text() }}
+      {% call check_error(error) %}
+        {{ lib.render_form(form, dir_url) }}
+      {% endcall %}
     {%- endif -%}
-
 {% endblock %}
 
 {% block tail %}

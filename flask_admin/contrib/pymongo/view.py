@@ -29,38 +29,13 @@ class ModelView(BaseModelView):
         Collection of the column filters.
 
         Should contain instances of
-        :class:`flask_admin.contrib.pymongo.filters.BasePyMongoFilter` classes.
-
-        Filters will be grouped by name when displayed in the drop-down.
+        :class:`flask_admin.contrib.pymongo.filters.BasePyMongoFilter`
+        classes.
 
         For example::
 
-            from flask_admin.contrib.pymongo.filters import BooleanEqualFilter
-
             class MyModelView(BaseModelView):
-                column_filters = (BooleanEqualFilter(column=User.name, name='Name'),)
-
-        or::
-
-            from flask_admin.contrib.pymongo.filters import BasePyMongoFilter
-
-            class FilterLastNameBrown(BasePyMongoFilter):
-                def apply(self, query, value):
-                    if value == '1':
-                        return query.filter(self.column == "Brown")
-                    else:
-                        return query.filter(self.column != "Brown")
-
-                def operation(self):
-                    return 'is Brown'
-
-            class MyModelView(BaseModelView):
-                column_filters = [
-                    FilterLastNameBrown(
-                        column=User.last_name, name='Last Name',
-                        options=(('1', 'Yes'), ('0', 'No'))
-                    )
-                ]
+                column_filters = (BooleanEqualFilter(User.name, 'Name'),)
     """
 
     def __init__(self, coll,
@@ -395,6 +370,6 @@ class ModelView(BaseModelView):
             flash(ngettext('Record was successfully deleted.',
                            '%(count)s records were successfully deleted.',
                            count,
-                           count=count), 'success')
+                           count=count))
         except Exception as ex:
             flash(gettext('Failed to delete records. %(error)s', error=str(ex)), 'error')

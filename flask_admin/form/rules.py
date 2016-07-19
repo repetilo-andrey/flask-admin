@@ -173,11 +173,7 @@ class Macro(BaseRule):
         """
         parts = name.split('.')
 
-        try:
-            field = context.resolve(parts[0])
-        except AttributeError:
-            raise Exception('Your template is missing '
-                            '"{% set render_ctx = h.resolve_ctx() %}"')
+        field = context.resolve(parts[0])
 
         if not field:
             return None
@@ -404,13 +400,12 @@ class RuleSet(object):
         result = []
 
         for r in rules:
-            if isinstance(r, string_types):
+            if isinstance(r, BaseRule):
+                result.append(r.configure(self, parent))
+            elif isinstance(r, string_types):
                 result.append(self.convert_string(r).configure(self, parent))
             else:
-                try:
-                    result.append(r.configure(self, parent))
-                except AttributeError:
-                    raise TypeError('Could not convert "%s" to rule' % repr(r))
+                raise ValueError('Dont know how to convert %s' % repr(r))
 
         return result
 

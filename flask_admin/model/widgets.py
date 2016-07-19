@@ -2,7 +2,7 @@ from flask import json
 from jinja2 import escape
 from wtforms.widgets import HTMLString, html_params
 
-from flask_admin._compat import as_unicode, text_type
+from flask_admin._compat import as_unicode
 from flask_admin.babel import gettext
 from flask_admin.helpers import get_url
 from flask_admin.form import RenderTemplateWidget
@@ -72,7 +72,7 @@ class XEditableWidget(object):
         field inside of the FieldList (StringField, IntegerField, etc).
     """
     def __call__(self, field, **kwargs):
-        kwargs.setdefault('data-value', kwargs.pop('display_value', ''))
+        kwargs.setdefault('data-value', kwargs.pop('value', ''))
 
         kwargs.setdefault('data-role', 'x-editable')
         kwargs.setdefault('data-url', './ajax/update/')
@@ -87,88 +87,68 @@ class XEditableWidget(object):
 
         kwargs['data-csrf'] = kwargs.pop("csrf", "")
 
-        kwargs = self.get_kwargs(field, kwargs)
+        # subfield is the first entry (subfield) from FieldList (field)
+        subfield = field.entries[0]
+
+        kwargs = self.get_kwargs(subfield, kwargs)
 
         return HTMLString(
             '<a %s>%s</a>' % (html_params(**kwargs),
                               escape(kwargs['data-value']))
         )
 
-    def get_kwargs(self, field, kwargs):
+    def get_kwargs(self, subfield, kwargs):
         """
-            Return extra kwargs based on the field type.
+            Return extra kwargs based on the subfield type.
         """
-        if field.type in ['StringField', 'TextField']:
+        if subfield.type == 'StringField':
             kwargs['data-type'] = 'text'
-        elif field.type == 'TextAreaField':
+        elif subfield.type == 'TextAreaField':
             kwargs['data-type'] = 'textarea'
             kwargs['data-rows'] = '5'
-        elif field.type == 'BooleanField':
+        elif subfield.type == 'BooleanField':
             kwargs['data-type'] = 'select'
             # data-source = dropdown options
-            kwargs['data-source'] = json.dumps([
-                {'value': '', 'text': gettext('No')},
-                {'value': '1', 'text': gettext('Yes')}
-            ])
+            kwargs['data-source'] = {'': 'False', '1': 'True'}
             kwargs['data-role'] = 'x-editable-boolean'
-        elif field.type in ['Select2Field', 'SelectField']:
+        elif subfield.type == 'Select2Field':
             kwargs['data-type'] = 'select'
-            choices = [{'value': x, 'text': y} for x, y in field.choices]
-
-            # prepend a blank field to choices if allow_blank = True
-            if getattr(field, 'allow_blank', False):
-                choices.insert(0, {'value': '__None', 'text': ''})
-
-            # json.dumps fixes issue with unicode strings not loading correctly
-            kwargs['data-source'] = json.dumps(choices)
-        elif field.type == 'DateField':
+            kwargs['data-source'] = dict(subfield.choices)
+        elif subfield.type == 'DateField':
             kwargs['data-type'] = 'combodate'
             kwargs['data-format'] = 'YYYY-MM-DD'
             kwargs['data-template'] = 'YYYY-MM-DD'
-        elif field.type == 'DateTimeField':
+        elif subfield.type == 'DateTimeField':
             kwargs['data-type'] = 'combodate'
             kwargs['data-format'] = 'YYYY-MM-DD HH:mm:ss'
             kwargs['data-template'] = 'YYYY-MM-DD  HH:mm:ss'
             # x-editable-combodate uses 1 minute increments
             kwargs['data-role'] = 'x-editable-combodate'
-        elif field.type == 'TimeField':
+        elif subfield.type == 'TimeField':
             kwargs['data-type'] = 'combodate'
             kwargs['data-format'] = 'HH:mm:ss'
             kwargs['data-template'] = 'HH:mm:ss'
             kwargs['data-role'] = 'x-editable-combodate'
-        elif field.type == 'IntegerField':
+        elif subfield.type == 'IntegerField':
             kwargs['data-type'] = 'number'
-        elif field.type in ['FloatField', 'DecimalField']:
+        elif subfield.type in ['FloatField', 'DecimalField']:
             kwargs['data-type'] = 'number'
             kwargs['data-step'] = 'any'
-        elif field.type in ['QuerySelectField', 'ModelSelectField',
-                            'QuerySelectMultipleField', 'KeyPropertyField']:
-            # QuerySelectField and ModelSelectField are for relations
+        elif subfield.type in ['QuerySelectField', 'ModelSelectField']:
             kwargs['data-type'] = 'select'
 
-            choices = []
-            selected_ids = []
-            for value, label, selected in field.iter_choices():
+            choices = {}
+            for choice in subfield:
                 try:
-                    label = text_type(label)
+                    choices[str(choice._value())] = str(choice.label.text)
                 except TypeError:
-                    # unable to display text value
-                    label = ''
-                choices.append({'value': text_type(value), 'text': label})
-                if selected:
-                    selected_ids.append(value)
-
-            # blank field is already included if allow_blank
-            kwargs['data-source'] = json.dumps(choices)
-
-            if field.type == 'QuerySelectMultipleField':
-                kwargs['data-type'] = 'select2'
-                kwargs['data-role'] = 'x-editable-select2-multiple'
-
-                # must use id instead of text or prefilled values won't work
-                separator = getattr(field, 'separator', ',')
-                kwargs['data-value'] = separator.join(selected_ids)
+                    choices[str(choice._value())] = ""
+            kwargs['data-source'] = choices
         else:
-            raise Exception('Unsupported field type: %s' % (type(field),))
+            raise Exception('Unsupported field type: %s' % (type(subfield),))
+
+        # for Select2, QuerySelectField, and ModelSelectField
+        if getattr(subfield, 'allow_blank', False):
+            kwargs['data-source']['__None'] = ""
 
         return kwargs

@@ -14,11 +14,11 @@
     {%- endif -%}
     {%- if admin_view.can_edit -%}
     <li>
-        <a href="{{ get_url('.edit_view', id=request.args.get('id'), url=return_url) }}">{{ _gettext('Edit') }}</a>
+        <a href="{{ get_url('.edit_view', id=get_pk_value(model), url=return_url) }}">{{ _gettext('Edit') }}</a>
     </li>
     {%- endif -%}
     <li class="active">
-        <a href="javascript:void(0)">{{ _gettext('Details') }}</a>
+        <a href="javascript:void(0)">{{ _gettext('View Record') }}</a>
     </li>
   </ul>
   {% endblock %}
@@ -49,6 +49,5 @@
 {% endblock %}
 
 {% block tail %}
-  {{ super() }}
   <script src="{{ admin_static.url(filename='admin/js/details_filter.js', v='1.0.0') }}"></script>
 {% endblock %}
