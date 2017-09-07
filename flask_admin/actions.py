@@ -8,7 +8,7 @@ import os
 import sys
 sys.path.append(os.path.dirname(sys.path[0]))
 try:
-    from app.utils import redirect
+    from app_admin.utils import redirect
 except ImportError:
     from flask import redirect
     
